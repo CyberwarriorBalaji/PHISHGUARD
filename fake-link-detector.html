@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhishGuard v3 — Cyber Security Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#060a10; --surface:#0d1420; --surface2:#111c2e;
+  --border:#1a2535; --accent:#00e5ff; --danger:#ff2d55;
+  --warn:#ffb300; --safe:#00e676; --muted:#4a6080;
+  --text:#c8d8f0; --text-dim:#6a8aaa;
+  --glow:0 0 20px rgba(0,229,255,0.3);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+
+.container{position:relative;z-index:1;max-width:940px;margin:0 auto;padding:36px 20px 80px;}
+
+/* HEADER */
+header{text-align:center;margin-bottom:40px;}
+.logo-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:8px;}
+.shield-icon{width:52px;height:52px;background:linear-gradient(135deg,var(--accent),#0088ff);clip-path:polygon(50% 0%,90% 20%,100% 60%,75% 100%,25% 100%,0% 60%,10% 20%);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:var(--glow);animation:pulse 3s ease-in-out infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 20px rgba(0,229,255,0.3);}50%{box-shadow:0 0 40px rgba(0,229,255,0.6);}}
+h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.6rem,5vw,4rem);letter-spacing:4px;color:#fff;line-height:1;}
+h1 span{color:var(--accent);}
+.tagline{font-family:'Share Tech Mono',monospace;font-size:0.73rem;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-top:6px;}
+.version-badge{display:inline-block;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:0.65rem;padding:2px 10px;border-radius:20px;margin-top:8px;letter-spacing:2px;}
+
+/* TABS */
+.tabs{display:flex;margin-bottom:28px;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.tab-btn{flex:1;padding:14px 10px;background:transparent;border:none;color:var(--text-dim);font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;cursor:pointer;transition:all 0.2s;border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:8px;}
+.tab-btn:last-child{border-right:none;}
+.tab-btn.active{background:rgba(0,229,255,0.1);color:var(--accent);}
+.tab-btn:hover:not(.active){background:rgba(255,255,255,0.03);color:var(--text);}
+
+/* TAB PANELS */
+.tab-panel{display:none;}
+.tab-panel.active{display:block;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* SCAN BAR */
+.scan-bar{display:flex;margin-bottom:10px;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--surface);transition:border-color 0.3s,box-shadow 0.3s;}
+.scan-bar:focus-within{border-color:var(--accent);box-shadow:var(--glow);}
+.scan-bar input{flex:1;background:transparent;border:none;outline:none;padding:15px 20px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:0.9rem;}
+.scan-bar input::placeholder{color:var(--muted);}
+.scan-btn{background:var(--accent);color:#000;border:none;padding:15px 28px;font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:2px;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.scan-btn:hover{background:#33ecff;}
+.scan-btn:active{transform:scale(0.97);}
+.scan-btn:disabled{background:var(--muted);cursor:not-allowed;}
+
+/* EXAMPLE TAGS */
+.examples{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:26px;}
+.example-tag{font-family:'Share Tech Mono',monospace;font-size:0.7rem;padding:4px 10px;border:1px solid var(--border);border-radius:4px;color:var(--text-dim);cursor:pointer;transition:all 0.2s;}
+.example-tag:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,0.05);}
+
+/* DROP ZONE */
+.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:44px 24px;text-align:center;cursor:pointer;transition:all 0.3s;background:var(--surface);margin-bottom:14px;position:relative;}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:rgba(0,229,255,0.04);box-shadow:var(--glow);}
+.drop-icon{font-size:3rem;margin-bottom:12px;display:block;}
+.drop-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:#fff;margin-bottom:6px;}
+.drop-sub{font-size:0.82rem;color:var(--text-dim);}
+.drop-input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.file-types{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-top:12px;}
+.ftype{font-family:'Share Tech Mono',monospace;font-size:0.68rem;padding:3px 8px;border-radius:3px;border:1px solid var(--border);color:var(--muted);}
+.ftype.d{border-color:rgba(255,45,85,0.4);color:var(--danger);}
+.ftype.w{border-color:rgba(255,179,0,0.4);color:var(--warn);}
+.ftype.s{border-color:rgba(0,230,118,0.4);color:var(--safe);}
+
+/* SELECTED FILE */
+.file-selected{display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:14px;align-items:center;gap:14px;}
+.file-selected.show{display:flex;}
+.file-emoji{font-size:2rem;}
+.file-details{flex:1;}
+.file-name{font-family:'Share Tech Mono',monospace;font-size:0.83rem;color:var(--text);word-break:break-all;}
+.file-meta{font-size:0.75rem;color:var(--text-dim);margin-top:3px;}
+
+/* SCANNING */
+.scanning-overlay{display:none;padding:34px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:22px;}
+.scan-anim{width:72px;height:72px;margin:0 auto 16px;position:relative;}
+.scan-ring{position:absolute;inset:0;border:2px solid var(--accent);border-radius:50%;opacity:0;animation:ripple 1.8s linear infinite;}
+.scan-ring:nth-child(2){animation-delay:.6s;}
+.scan-ring:nth-child(3){animation-delay:1.2s;}
+@keyframes ripple{0%{transform:scale(.3);opacity:.8;}100%{transform:scale(1);opacity:0;}}
+.scan-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.4rem;}
+.scan-status{font-family:'Share Tech Mono',monospace;font-size:0.8rem;color:var(--accent);letter-spacing:2px;}
+.scan-progress-bar{height:3px;background:var(--border);border-radius:2px;margin-top:12px;overflow:hidden;}
+.scan-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),#0088ff);border-radius:2px;width:0%;transition:width .4s ease;}
+
+/* RESULT CARD */
+.result-area{display:none;animation:slideIn .4s cubic-bezier(.16,1,.3,1);}
+@keyframes slideIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.result-card{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface);margin-bottom:18px;}
+.result-header{padding:18px 22px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border);}
+.verdict-badge{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;padding:7px 18px;border-radius:4px;flex-shrink:0;}
+.verdict-badge.SAFE{background:rgba(0,230,118,.15);color:var(--safe);border:1px solid var(--safe);}
+.verdict-badge.WARNING{background:rgba(255,179,0,.15);color:var(--warn);border:1px solid var(--warn);}
+.verdict-badge.DANGER{background:rgba(255,45,85,.15);color:var(--danger);border:1px solid var(--danger);}
+.verdict-sub{font-family:'Share Tech Mono',monospace;font-size:0.78rem;color:var(--text-dim);word-break:break-all;}
+.risk-meter{padding:18px 22px;border-bottom:1px solid var(--border);}
+.meter-label{display:flex;justify-content:space-between;font-size:0.73rem;color:var(--text-dim);margin-bottom:7px;font-family:'Share Tech Mono',monospace;text-transform:uppercase;letter-spacing:1px;}
+.meter-track{height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+.meter-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.16,1,.3,1);width:0%;}
+.checks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1px;background:var(--border);}
+.check-item{background:var(--surface);padding:13px 17px;display:flex;align-items:flex-start;gap:10px;}
+.check-icon{font-size:1rem;flex-shrink:0;margin-top:1px;}
+.check-name{font-size:0.7rem;color:var(--text-dim);margin-bottom:2px;font-family:'Share Tech Mono',monospace;text-transform:uppercase;letter-spacing:1px;}
+.check-val{font-size:0.84rem;color:var(--text);font-weight:500;}
+.details-section{padding:17px 22px;border-top:1px solid var(--border);}
+.details-title{font-family:'Share Tech Mono',monospace;font-size:0.66rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:11px;}
+.flag-list{list-style:none;}
+.flag-list li{padding:7px 0;border-bottom:1px solid var(--border);font-size:0.84rem;display:flex;gap:10px;align-items:flex-start;}
+.flag-list li:last-child{border-bottom:none;}
+.flag-dot{width:6px;height:6px;border-radius:50%;margin-top:7px;flex-shrink:0;}
+
+/* HASH BOX */
+.hash-box{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:11px 15px;margin-top:10px;}
+.hash-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);gap:10px;}
+.hash-row:last-child{border-bottom:none;}
+.hash-type{font-family:'Share Tech Mono',monospace;font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;width:58px;}
+.hash-val{font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--text-dim);word-break:break-all;flex:1;}
+.copy-btn{font-size:0.66rem;padding:2px 8px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:3px;cursor:pointer;font-family:'Share Tech Mono',monospace;flex-shrink:0;transition:all .2s;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* PERMISSIONS */
+.perm-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.perm-pill{font-family:'Share Tech Mono',monospace;font-size:0.65rem;padding:3px 9px;border-radius:20px;border:1px solid;cursor:default;}
+.perm-danger{background:rgba(255,45,85,.1);color:var(--danger);border-color:rgba(255,45,85,.3);}
+.perm-warn{background:rgba(255,179,0,.1);color:var(--warn);border-color:rgba(255,179,0,.3);}
+.perm-safe{background:rgba(100,130,180,.1);color:var(--text-dim);border-color:var(--border);}
+
+/* HISTORY */
+.history-section{margin-top:34px;}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:#fff;margin-bottom:13px;display:flex;align-items:center;gap:10px;}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.history-item{display:flex;align-items:center;gap:11px;padding:9px 14px;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;background:var(--surface);transition:background .2s;}
+.history-item:hover{background:#111e30;}
+.h-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.h-url{font-family:'Share Tech Mono',monospace;font-size:0.76rem;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.h-score{font-size:0.73rem;color:var(--text-dim);flex-shrink:0;}
+
+/* GUIDE */
+.guide{margin-top:44px;}
+.guide-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:13px;}
+.guide-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:17px;transition:border-color .2s,transform .2s;}
+.guide-card:hover{border-color:rgba(0,229,255,.4);transform:translateY(-2px);}
+.guide-card-icon{font-size:1.4rem;margin-bottom:8px;}
+.guide-card h3{font-size:0.78rem;font-weight:600;color:var(--accent);margin-bottom:6px;font-family:'Share Tech Mono',monospace;letter-spacing:1px;text-transform:uppercase;}
+.guide-card p{font-size:0.78rem;color:var(--text-dim);line-height:1.6;}
+
+.info-box{background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.15);border-radius:6px;padding:11px 15px;margin-bottom:18px;font-size:0.78rem;color:var(--text-dim);line-height:1.6;}
+.info-box strong{color:var(--accent);}
+
+footer{text-align:center;margin-top:54px;font-size:0.7rem;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px;}
+a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<header>
+  <div class="logo-row">
+    <div class="shield-icon">🛡</div>
+    <h1>PHISH<span>GUARD</span></h1>
+  </div>
+  <p class="tagline">// Cyber Security Scanner — URL · File · APK</p>
+  <span class="version-badge">VERSION 3.0</span>
+</header>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('url')">🔗 URL SCAN</button>
+  <button class="tab-btn" onclick="switchTab('file')">📄 FILE CHECK</button>
+  <button class="tab-btn" onclick="switchTab('apk')">📱 APK CHECK</button>
+</div>
+
+<!-- ═══ TAB 1: URL ═══ -->
+<div class="tab-panel active" id="tab-url">
+  <div class="scan-bar">
+    <input type="text" id="urlInput" placeholder="Paste a URL here... e.g. https://paypa1-login.ru/verify" autocomplete="off" spellcheck="false">
+    <button class="scan-btn" id="urlScanBtn" onclick="analyzeURL()">SCAN</button>
+  </div>
+  <div class="examples">
+    <span style="font-size:.7rem;color:var(--muted);align-self:center;font-family:'Share Tech Mono',monospace;">TRY:</span>
+    <span class="example-tag" onclick="loadURLEx('https://paypa1-secure.login.ru/account/verify')">Fake PayPal</span>
+    <span class="example-tag" onclick="loadURLEx('http://amaz0n-prize.click/winner/claim')">Fake Amazon</span>
+    <span class="example-tag" onclick="loadURLEx('https://google.com')">Real Google</span>
+    <span class="example-tag" onclick="loadURLEx('https://netflix-update.tk/billing')">Fake Netflix</span>
+    <span class="example-tag" onclick="loadURLEx('bit.ly/3xHf9K2')">Shortened URL</span>
+    <span class="example-tag" onclick="loadURLEx('http://192.168.1.1/login@paypal.com')">IP + Fake</span>
+  </div>
+  <div class="scanning-overlay" id="urlScanning">
+    <div class="scan-anim"><div class="scan-ring"></div><div class="scan-ring"></div><div class="scan-ring"></div><div class="scan-center">🔍</div></div>
+    <div class="scan-status" id="urlStatus">INITIALIZING...</div>
+    <div class="scan-progress-bar"><div class="scan-progress-fill" id="urlProg"></div></div>
+  </div>
+  <div class="result-area" id="urlResult"></div>
+</div>
+
+<!-- ═══ TAB 2: FILE ═══ -->
+<div class="tab-panel" id="tab-file">
+  <div class="info-box"><strong>🔒 100% Private:</strong> Your file is NEVER uploaded. All analysis runs locally in your browser. SHA-256 hash is computed via Web Crypto API for VirusTotal lookup.</div>
+  <div class="drop-zone" id="fileDrop" ondragover="doDragOver(event,'fileDrop')" ondragleave="doDragLeave('fileDrop')" ondrop="doFileDrop(event)">
+    <input type="file" class="drop-input" id="fileInput" onchange="onFileSelect(event)">
+    <span class="drop-icon">📂</span>
+    <div class="drop-title">DROP FILE HERE</div>
+    <div class="drop-sub">or click to browse · any file type</div>
+    <div class="file-types">
+      <span class="ftype d">.exe</span><span class="ftype d">.bat</span><span class="ftype d">.cmd</span><span class="ftype d">.ps1</span><span class="ftype d">.vbs</span>
+      <span class="ftype w">.zip</span><span class="ftype w">.rar</span><span class="ftype w">.iso</span><span class="ftype w">.apk</span>
+      <span class="ftype s">.pdf</span><span class="ftype s">.docx</span><span class="ftype s">.jpg</span>
+    </div>
+  </div>
+  <div class="file-selected" id="fileInfo">
+    <div class="file-emoji" id="fileEmoji">📄</div>
+    <div class="file-details">
+      <div class="file-name" id="fileName">—</div>
+      <div class="file-meta" id="fileMeta">—</div>
+    </div>
+    <button class="scan-btn" id="fileScanBtn" onclick="analyzeFile()" style="border-radius:4px;flex-shrink:0;">ANALYZE</button>
+  </div>
+  <div class="scanning-overlay" id="fileScanning">
+    <div class="scan-anim"><div class="scan-ring"></div><div class="scan-ring"></div><div class="scan-ring"></div><div class="scan-center">🔬</div></div>
+    <div class="scan-status" id="fileStatus">READING FILE...</div>
+    <div class="scan-progress-bar"><div class="scan-progress-fill" id="fileProg"></div></div>
+  </div>
+  <div class="result-area" id="fileResult"></div>
+</div>
+
+<!-- ═══ TAB 3: APK ═══ -->
+<div class="tab-panel" id="tab-apk">
+  <div class="info-box"><strong>📱 APK Analyzer:</strong> Drop an <strong>.apk</strong> file to inspect ZIP structure, AndroidManifest, dangerous permissions, package name spoofing, embedded suspicious strings, and signing certificates. Heuristic analysis — for deep scanning use VirusTotal or MobSF.</div>
+  <div class="drop-zone" id="apkDrop" ondragover="doDragOver(event,'apkDrop')" ondragleave="doDragLeave('apkDrop')" ondrop="doAPKDrop(event)">
+    <input type="file" class="drop-input" id="apkInput" accept=".apk" onchange="onAPKSelect(event)">
+    <span class="drop-icon">📱</span>
+    <div class="drop-title">DROP APK FILE HERE</div>
+    <div class="drop-sub">or click to browse · .apk files only</div>
+    <div class="file-types"><span class="ftype d">.apk</span><span class="ftype w">Recommended max: 100 MB</span></div>
+  </div>
+  <div class="file-selected" id="apkInfo">
+    <div class="file-emoji">📦</div>
+    <div class="file-details">
+      <div class="file-name" id="apkName">—</div>
+      <div class="file-meta" id="apkMeta">—</div>
+    </div>
+    <button class="scan-btn" id="apkScanBtn" onclick="analyzeAPK()" style="border-radius:4px;flex-shrink:0;">ANALYZE</button>
+  </div>
+  <div class="scanning-overlay" id="apkScanning">
+    <div class="scan-anim"><div class="scan-ring"></div><div class="scan-ring"></div><div class="scan-ring"></div><div class="scan-center">📱</div></div>
+    <div class="scan-status" id="apkStatus">PARSING APK...</div>
+    <div class="scan-progress-bar"><div class="scan-progress-fill" id="apkProg"></div></div>
+  </div>
+  <div class="result-area" id="apkResult"></div>
+</div>
+
+<!-- HISTORY -->
+<div class="history-section" id="historySection" style="display:none">
+  <div class="section-title">SCAN HISTORY</div>
+  <div id="historyList"></div>
+</div>
+
+<!-- GUIDE -->
+<div class="guide">
+  <div class="section-title">HOW IT WORKS</div>
+  <div class="guide-grid">
+    <div class="guide-card"><div class="guide-card-icon">🌐</div><h3>URL Scanner</h3><p>Detects phishing via TLD analysis, lookalike leet-speak characters, brand impersonation, suspicious keywords, URL shorteners, raw IP addresses, and HTTP vs HTTPS.</p></div>
+    <div class="guide-card"><div class="guide-card-icon">📄</div><h3>File Checker</h3><p>Checks extension type, reads magic bytes (real file type), double-extension tricks (photo.jpg.exe), embedded scripts, file size anomalies, and computes SHA-256 hash.</p></div>
+    <div class="guide-card"><div class="guide-card-icon">📱</div><h3>APK Analyzer</h3><p>Parses APK (ZIP) structure, reads AndroidManifest, detects dangerous permissions (SMS, Camera, Root), package name spoofing, unsigned APKs, and suspicious code strings.</p></div>
+    <div class="guide-card"><div class="guide-card-icon">🔐</div><h3>Hash Lookup</h3><p>CRC32, SHA-1, and SHA-256 hashes are computed in your browser. Paste the SHA-256 on VirusTotal.com to cross-check against 70+ antivirus engines instantly.</p></div>
+    <div class="guide-card"><div class="guide-card-icon">📊</div><h3>Risk Scoring</h3><p>Each suspicious signal adds to a 0–100 risk score. 0–25 = Safe ✅, 26–55 = Warning ⚠️, 56–100 = Danger 🚨. Severity-weighted for accuracy.</p></div>
+    <div class="guide-card"><div class="guide-card-icon">🔒</div><h3>100% Private</h3><p>Nothing is sent to any server. URL analysis is regex/heuristic-based. File and APK analysis uses the browser's FileReader and Web Crypto APIs entirely locally.</p></div>
+  </div>
+</div>
+
+<footer>⚡ PHISHGUARD v3.0 — FOR EDUCATIONAL & CYBER SECURITY PURPOSES ONLY ⚡</footer>
+</div>
+
+<script>
+// Load JSZip for APK parsing
+(function(){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';document.head.appendChild(s);})();
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+const scanHistory = [];
+let selectedFile = null;
+let selectedAPK  = null;
+
+// ── CONSTANTS ──────────────────────────────────────────────────────────────
+const SUSP_TLDS   = ['tk','ml','ga','cf','gq','ru','cn','pw','top','click','xyz','online','site','info','cc','ws','biz','icu','vip'];
+const BRANDS      = ['paypal','google','amazon','netflix','apple','microsoft','facebook','instagram','twitter','bank','ebay','steam','discord','whatsapp','linkedin','youtube','tiktok'];
+const PHISH_KW    = ['verify','secure','login','update','confirm','account','billing','suspend','winner','prize','claim','urgent','alert','validate','password','credential'];
+const DANGER_EXTS = ['exe','bat','cmd','ps1','vbs','js','jar','msi','scr','pif','com','hta','reg','lnk','dll','sh','bash','zsh','cpl','inf','wsf'];
+const WARN_EXTS   = ['zip','rar','7z','tar','gz','iso','dmg','apk','deb','rpm','img'];
+const DANGER_PERMS = {
+  SEND_SMS:{l:'danger',d:'Send SMS (billing fraud)'},RECEIVE_SMS:{l:'danger',d:'Intercept incoming SMS (OTP theft)'},
+  READ_SMS:{l:'danger',d:'Read your SMS messages'},RECORD_AUDIO:{l:'danger',d:'Record microphone silently'},
+  CAMERA:{l:'danger',d:'Access camera silently'},USE_CREDENTIALS:{l:'danger',d:'Use account credentials'},
+  MANAGE_ACCOUNTS:{l:'danger',d:'Manage device accounts'},INSTALL_PACKAGES:{l:'danger',d:'Install APKs silently'},
+  DELETE_PACKAGES:{l:'danger',d:'Uninstall apps silently'},BIND_ACCESSIBILITY_SERVICE:{l:'danger',d:'Accessibility (keylogger risk)'},
+  BIND_DEVICE_ADMIN:{l:'danger',d:'Full device admin access'},DISABLE_KEYGUARD:{l:'danger',d:'Disable screen lock'},
+  MASTER_CLEAR:{l:'danger',d:'Factory reset device'},PROCESS_OUTGOING_CALLS:{l:'danger',d:'Intercept phone calls'},
+  READ_CALL_LOG:{l:'warn',d:'Read call history'},READ_CONTACTS:{l:'warn',d:'Access all contacts'},
+  ACCESS_FINE_LOCATION:{l:'warn',d:'Precise GPS location'},ACCESS_COARSE_LOCATION:{l:'warn',d:'Approximate location'},
+  READ_EXTERNAL_STORAGE:{l:'warn',d:'Read all SD card files'},WRITE_EXTERNAL_STORAGE:{l:'warn',d:'Write to storage'},
+  GET_ACCOUNTS:{l:'warn',d:'List Google accounts'},SYSTEM_ALERT_WINDOW:{l:'warn',d:'Overlay on other apps'},
+  RECEIVE_BOOT_COMPLETED:{l:'warn',d:'Auto-start on boot'},READ_PHONE_STATE:{l:'warn',d:'Access IMEI/phone number'},
+  CALL_PHONE:{l:'warn',d:'Make phone calls'},INTERNET:{l:'warn',d:'Full internet access'},
+  WAKE_LOCK:{l:'warn',d:'Prevent device sleep'},CHANGE_NETWORK_STATE:{l:'warn',d:'Toggle network connections'},
+};
+
+// ── UTILS ─────────────────────────────────────────────────────────────────
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function fmtSize(b){ return b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(2)+' MB'; }
+function getEmoji(ext){ return {exe:'⚠️',bat:'⚠️',cmd:'⚠️',ps1:'⚠️',vbs:'⚠️',sh:'⚠️',jar:'⚠️',apk:'📱',zip:'🗜️',rar:'🗜️',pdf:'📕',docx:'📝',xlsx:'📊',png:'🖼️',jpg:'🖼️',jpeg:'🖼️',gif:'🖼️',mp4:'🎬',mp3:'🎵',html:'🌐',py:'🐍',txt:'📄'}[ext]||'📄'; }
+
+async function animateScan(statusId, progId, steps){
+  const se=document.getElementById(statusId), pe=document.getElementById(progId);
+  for(let i=0;i<steps.length;i++){ se.textContent=steps[i]; pe.style.width=((i+1)/steps.length*100)+'%'; await sleep(340); }
+}
+
+async function sha256(buf){ const h=await crypto.subtle.digest('SHA-256',buf); return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join(''); }
+async function sha1(buf){ const h=await crypto.subtle.digest('SHA-1',buf); return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join(''); }
+function crc32str(buf){
+  let t=[],c;for(let i=0;i<256;i++){c=i;for(let j=0;j<8;j++)c=c&1?(0xEDB88320^(c>>>1)):c>>>1;t[i]=c;}
+  let crc=0xFFFFFFFF;const a=new Uint8Array(buf);for(let i=0;i<a.length;i++)crc=(crc>>>8)^t[(crc^a[i])&0xFF];
+  return ((crc^0xFFFFFFFF)>>>0).toString(16).toUpperCase().padStart(8,'0');
+}
+
+function renderCard(cid, label, verdict, score, checks, flags, extra=''){
+  const mc=score<=25?'var(--safe)':score<=55?'var(--warn)':'var(--danger)';
+  const em=verdict==='SAFE'?'✅':verdict==='WARNING'?'⚠️':'🚨';
+  const ch=Object.values(checks).map((c,i)=>`<div class="check-item" style="animation-delay:${i*.04}s"><span class="check-icon">${c.ok?'✅':'❌'}</span><div><div class="check-name">${c.label}</div><div class="check-val">${c.val}</div></div></div>`).join('');
+  const fl=flags.map(f=>{const col=f.s==='danger'?'var(--danger)':f.s==='warn'?'var(--warn)':'var(--safe)';return `<li><span class="flag-dot" style="background:${col}"></span><span>${f.t}</span></li>`;}).join('');
+  const el=document.getElementById(cid);
+  el.innerHTML=`<div class="result-card"><div class="result-header"><div class="verdict-badge ${verdict}">${em} ${verdict}</div><div class="verdict-sub">${label}</div></div><div class="risk-meter"><div class="meter-label"><span>RISK SCORE</span><span id="${cid}_c">0 / 100</span></div><div class="meter-track"><div class="meter-fill" id="${cid}_f" style="background:${mc}"></div></div></div><div class="checks-grid">${ch}</div>${extra}<div class="details-section"><div class="details-title">// FLAGS &amp; FINDINGS</div><ul class="flag-list">${fl}</ul></div></div>`;
+  el.style.display='block';
+  let cur=0;const iv=setInterval(()=>{cur=Math.min(cur+2,score);document.getElementById(cid+'_c').textContent=cur+' / 100';document.getElementById(cid+'_f').style.width=cur+'%';if(cur>=score)clearInterval(iv);},18);
+}
+
+function addHistory(icon,text,score,verdict){
+  scanHistory.unshift({icon,text,score,verdict});
+  document.getElementById('historySection').style.display='block';
+  const col=v=>v==='SAFE'?'var(--safe)':v==='WARNING'?'var(--warn)':'var(--danger)';
+  document.getElementById('historyList').innerHTML=scanHistory.slice(0,8).map(h=>`<div class="history-item"><span>${h.icon}</span><span class="h-dot" style="background:${col(h.verdict)}"></span><span class="h-url">${h.text}</span><span class="h-score" style="color:${col(h.verdict)}">${h.verdict} · ${h.score}/100</span></div>`).join('');
+}
+
+function hashExtra(crc,sha1h,sha256h,note=''){
+  return `<div class="details-section"><div class="details-title">// CRYPTOGRAPHIC HASHES</div><div class="hash-box"><div class="hash-row"><span class="hash-type">CRC32</span><span class="hash-val">${crc}</span><button class="copy-btn" onclick="navigator.clipboard.writeText('${crc}')">COPY</button></div><div class="hash-row"><span class="hash-type">SHA-1</span><span class="hash-val">${sha1h}</span><button class="copy-btn" onclick="navigator.clipboard.writeText('${sha1h}')">COPY</button></div><div class="hash-row"><span class="hash-type">SHA-256</span><span class="hash-val">${sha256h}</span><button class="copy-btn" onclick="navigator.clipboard.writeText('${sha256h}')">COPY</button></div></div><p style="font-size:.74rem;color:var(--text-dim);margin-top:9px;">💡 ${note||'Paste SHA-256 at <a href="https://virustotal.com/gui/home/search" target="_blank">virustotal.com</a> to scan with 70+ AV engines.'}</p></div>`;
+}
+
+// ── TAB SWITCH ────────────────────────────────────────────────────────────
+function switchTab(n){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['url','file','apk'][i]===n));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+n).classList.add('active');
+}
+
+// ── DRAG & DROP HELPERS ───────────────────────────────────────────────────
+function doDragOver(e,id){e.preventDefault();document.getElementById(id).classList.add('dragover');}
+function doDragLeave(id){document.getElementById(id).classList.remove('dragover');}
+
+// ═══════════════════════════════════════════════════════════════
+//  TAB 1 — URL SCANNER
+// ═══════════════════════════════════════════════════════════════
+function loadURLEx(u){document.getElementById('urlInput').value=u;analyzeURL();}
+document.addEventListener('DOMContentLoaded',()=>{document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')analyzeURL();});});
+
+async function analyzeURL(){
+  const raw=document.getElementById('urlInput').value.trim();
+  if(!raw){alert('Please enter a URL.');return;}
+  document.getElementById('urlScanBtn').disabled=true;
+  document.getElementById('urlResult').style.display='none';
+  document.getElementById('urlScanning').style.display='block';
+  await animateScan('urlStatus','urlProg',['INITIALIZING SCAN...','PARSING URL STRUCTURE...','CHECKING DOMAIN & TLD...','SCANNING KEYWORDS...','COMPUTING RISK SCORE...','GENERATING REPORT...']);
+  document.getElementById('urlScanning').style.display='none';
+  const a=urlAnalysis(raw);
+  renderCard('urlResult',raw,a.verdict,a.score,a.checks,a.flags);
+  addHistory('🔗',raw,a.score,a.verdict);
+  document.getElementById('urlScanBtn').disabled=false;
+}
+
+function urlAnalysis(raw){
+  const flags=[]; let score=0;
+  let urlObj=null;
+  try{urlObj=new URL(/^https?:\/\//i.test(raw)?raw:'http://'+raw);}catch(e){}
+  const host=urlObj?urlObj.hostname.toLowerCase():raw.toLowerCase();
+  const full=raw.toLowerCase();
+  const proto=urlObj?urlObj.protocol:'';
+  const path=urlObj?urlObj.pathname.toLowerCase():'';
+  const tld=host.split('.').pop();
+
+  if(!raw.startsWith('https://')&&!raw.startsWith('http://')){flags.push({t:'No protocol specified — may be raw or shortened link',s:'warn'});score+=10;}
+  else if(raw.startsWith('http://')){flags.push({t:'HTTP (unencrypted) — phishing sites often skip SSL',s:'danger'});score+=20;}
+
+  if(SUSP_TLDS.includes(tld)){flags.push({t:`Suspicious TLD ".${tld}" — popular for free/spam/phishing domains`,s:'danger'});score+=25;}
+
+  const lm={'0':'o','1':'i','3':'e','4':'a','5':'s','@':'a','$':'s','!':'i'};
+  let lh=host;Object.entries(lm).forEach(([k,v])=>{lh=lh.replaceAll(k,v);});
+  for(const b of BRANDS){if(lh.includes(b)&&!host.includes(b)){flags.push({t:`Leet-speak lookalike — "${host}" mimics "${b}"`,s:'danger'});score+=30;break;}}
+
+  for(const b of BRANDS){
+    const parts=host.split('.'),main=parts.slice(-2).join('.');
+    if(!main.includes(b)&&host.includes(b)){flags.push({t:`Brand "${b}" in subdomain, not the real domain — classic phishing`,s:'danger'});score+=35;break;}
+  }
+
+  const kw=PHISH_KW.filter(k=>full.includes(k));
+  if(kw.length>=3){flags.push({t:`Multiple phishing keywords: "${kw.slice(0,4).join('", "')}"`,s:'danger'});score+=20;}
+  else if(kw.length>0){flags.push({t:`Suspicious keyword(s): "${kw.join('", "')}"`,s:'warn'});score+=10;}
+
+  if(raw.length>100){flags.push({t:`Unusually long URL (${raw.length} chars) — used to confuse users`,s:'warn'});score+=10;}
+
+  const subd=host.split('.').length-2;
+  if(subd>=3){flags.push({t:`${subd+2} subdomains — excessive nesting is a red flag`,s:'danger'});score+=15;}
+  else if(subd===2){flags.push({t:'Multiple subdomains — verify the real domain',s:'warn'});score+=8;}
+
+  if(/^\d{1,3}(\.\d{1,3}){3}$/.test(host)){flags.push({t:'Raw IP address as host — legitimate sites use domain names',s:'danger'});score+=30;}
+
+  const shorts=['bit.ly','tinyurl.com','t.co','goo.gl','ow.ly','short.io','is.gd','tiny.cc','rb.gy'];
+  if(shorts.some(s=>host.includes(s))){flags.push({t:'URL shortener detected — real destination is hidden',s:'warn'});score+=15;}
+
+  if(full.includes('@')){flags.push({t:'"@" in URL — browsers ignore everything before it (credential trick)',s:'danger'});score+=25;}
+  if(path.includes('//')){flags.push({t:'Double slashes in path — possible redirect obfuscation',s:'warn'});score+=8;}
+  if(urlObj&&urlObj.port&&!['80','443',''].includes(urlObj.port)){flags.push({t:`Non-standard port (${urlObj.port}) — legitimate sites rarely use unusual ports`,s:'warn'});score+=12;}
+  if(full.includes('%')&&(full.match(/%[0-9a-f]{2}/gi)||[]).length>3){flags.push({t:'Heavy URL encoding — may be hiding malicious content',s:'warn'});score+=10;}
+
+  score=Math.min(score,100);
+  if(flags.length===0){flags.push({t:'No suspicious patterns detected',s:'safe'});flags.push({t:'HTTPS protocol confirmed',s:'safe'});flags.push({t:'No phishing keywords found',s:'safe'});}
+  const verdict=score<=25?'SAFE':score<=55?'WARNING':'DANGER';
+  return{score,verdict,flags,checks:{
+    proto:{label:'Protocol',val:proto||'None',ok:proto==='https:'},
+    tld:{label:'TLD',val:`.${tld}`,ok:!SUSP_TLDS.includes(tld)},
+    enc:{label:'Encrypted',val:proto==='https:'?'Yes':'No',ok:proto==='https:'},
+    len:{label:'URL Length',val:`${raw.length} chars`,ok:raw.length<=100},
+    sub:{label:'Subdomains',val:`${Math.max(0,subd)} extra`,ok:subd<2},
+    kw:{label:'Phish Keywords',val:kw.length?kw.join(', '):'None',ok:kw.length===0},
+  }};
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TAB 2 — FILE CHECKER
+// ═══════════════════════════════════════════════════════════════
+function doFileDrop(e){e.preventDefault();doDragLeave('fileDrop');const f=e.dataTransfer.files[0];if(f){selectedFile=f;showFileInfo(f);}}
+function onFileSelect(e){const f=e.target.files[0];if(f){selectedFile=f;showFileInfo(f);}}
+
+function showFileInfo(f){
+  const ext=(f.name.split('.').pop()||'').toLowerCase();
+  document.getElementById('fileEmoji').textContent=getEmoji(ext);
+  document.getElementById('fileName').textContent=f.name;
+  document.getElementById('fileMeta').textContent=`${fmtSize(f.size)} · ${f.type||'Unknown MIME'} · Modified: ${new Date(f.lastModified).toLocaleDateString()}`;
+  document.getElementById('fileInfo').classList.add('show');
+  document.getElementById('fileResult').style.display='none';
+}
+
+async function analyzeFile(){
+  if(!selectedFile){alert('Select a file first.');return;}
+  document.getElementById('fileScanBtn').disabled=true;
+  document.getElementById('fileResult').style.display='none';
+  document.getElementById('fileScanning').style.display='block';
+  await animateScan('fileStatus','fileProg',['READING FILE METADATA...','CHECKING EXTENSION & MIME...','SCANNING MAGIC BYTES...','DETECTING DOUBLE EXTENSION...','COMPUTING SHA-256 HASH...','SCANNING FOR SCRIPTS...','GENERATING REPORT...']);
+  const buf=await selectedFile.arrayBuffer();
+  const [s256,s1]=await Promise.all([sha256(buf),sha1(buf)]);
+  const crc=crc32str(buf);
+  const bytes=new Uint8Array(buf);
+  document.getElementById('fileScanning').style.display='none';
+  const a=fileAnalysis(selectedFile,bytes);
+  renderCard('fileResult',selectedFile.name,a.verdict,a.score,a.checks,a.flags,hashExtra(crc,s1,s256));
+  addHistory(getEmoji((selectedFile.name.split('.').pop()||'').toLowerCase()),selectedFile.name,a.score,a.verdict);
+  document.getElementById('fileScanBtn').disabled=false;
+}
+
+function fileAnalysis(file,bytes){
+  const flags=[]; let score=0;
+  const name=file.name.toLowerCase();
+  const parts=name.split('.');
+  const ext=parts.pop()||'';
+  const ext2=parts.length>1?parts.pop():'';
+  const text=new TextDecoder('utf-8',{fatal:false}).decode(bytes.slice(0,3000));
+
+  // Extension
+  if(DANGER_EXTS.includes(ext)){flags.push({t:`Dangerous extension ".${ext}" — can execute malicious code`,s:'danger'});score+=40;}
+  else if(WARN_EXTS.includes(ext)){flags.push({t:`Archive/installer ".${ext}" — may hide executables inside`,s:'warn'});score+=15;}
+  else{flags.push({t:`Extension ".${ext}" is generally safe`,s:'safe'});}
+
+  // Double extension
+  if(ext2&&DANGER_EXTS.includes(ext2)){flags.push({t:`Double extension trick: ".${ext2}.${ext}" — real type is ".${ext2}"`,s:'danger'});score+=40;}
+
+  // Magic bytes
+  let magic='Unknown',mok=true;
+  if(bytes[0]===0x4D&&bytes[1]===0x5A){magic='Windows PE Executable (MZ)';flags.push({t:'Magic bytes: Windows PE Executable detected inside file',s:'danger'});score+=35;mok=false;}
+  else if(bytes[0]===0x50&&bytes[1]===0x4B){magic='ZIP Archive (PK)';flags.push({t:'Magic bytes: ZIP archive — may contain hidden executable files',s:'warn'});score+=5;}
+  else if(bytes[0]===0x7F&&bytes[1]===0x45){magic='ELF Executable (Linux/Android)';flags.push({t:'Magic bytes: ELF Linux/Android executable — can run system code',s:'danger'});score+=35;mok=false;}
+  else if(bytes[0]===0x25&&bytes[1]===0x50){magic='PDF Document';}
+  else if(bytes[0]===0xFF&&bytes[1]===0xD8){magic='JPEG Image';}
+  else if(bytes[0]===0x89&&bytes[1]===0x50){magic='PNG Image';}
+  else if(bytes[0]===0x47&&bytes[1]===0x49){magic='GIF Image';}
+  else if(bytes[0]===0xD0&&bytes[1]===0xCF){magic='Office 97-2003 (OLE)';}
+  else{magic=`Unknown (0x${bytes[0].toString(16).padStart(2,'0')})`;flags.push({t:'Unrecognized magic bytes — real file type unclear',s:'warn'});score+=8;}
+
+  // Mismatch
+  const isImg=['jpg','jpeg','png','gif','bmp','webp'].includes(ext);
+  const isPdf=ext==='pdf';
+  if((isImg||isPdf)&&magic.includes('Executable')){flags.push({t:`TYPE MISMATCH: Extension ".${ext}" but file is actually an executable!`,s:'danger'});score+=45;}
+
+  // File size
+  if(file.size===0){flags.push({t:'File is empty (0 bytes)',s:'warn'});score+=10;}
+
+  // Script patterns
+  if(/<script/i.test(text)){flags.push({t:'Embedded <script> tags found in file content',s:'danger'});score+=20;}
+  if(/powershell|cmd\.exe|invoke-expression|iex\s*\(/i.test(text)){flags.push({t:'PowerShell/CMD strings found — possible dropper/loader',s:'danger'});score+=25;}
+  if(/eval\s*\(|base64_decode|atob\s*\(/i.test(text)){flags.push({t:'"eval/base64_decode/atob" patterns — common in obfuscated malware',s:'warn'});score+=15;}
+
+  // Social engineering filename
+  if(/invoice|receipt|payment|document|contract/i.test(name)&&DANGER_EXTS.includes(ext)){flags.push({t:`Filename "${file.name}" is social engineering bait for an executable`,s:'danger'});score+=20;}
+
+  score=Math.min(score,100);
+  if(flags.filter(f=>f.s!=='safe').length===0){flags.push({t:'No suspicious patterns found',s:'safe'});}
+  const verdict=score<=25?'SAFE':score<=55?'WARNING':'DANGER';
+  return{score,verdict,flags,checks:{
+    ext:{label:'Extension',val:`.${ext}`,ok:!DANGER_EXTS.includes(ext)},
+    magic:{label:'Magic Bytes',val:magic,ok:mok},
+    dbl:{label:'Double Ext',val:ext2?`.${ext2}.${ext}`:'None',ok:!DANGER_EXTS.includes(ext2)},
+    size:{label:'File Size',val:fmtSize(file.size),ok:file.size>0},
+    script:{label:'Script Content',val:/<script/i.test(text)||/powershell/i.test(text)?'FOUND':'None',ok:!/<script/i.test(text)},
+    mime:{label:'MIME Type',val:file.type||'Unknown',ok:true},
+  }};
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TAB 3 — APK CHECKER
+// ═══════════════════════════════════════════════════════════════
+function doAPKDrop(e){e.preventDefault();doDragLeave('apkDrop');const f=e.dataTransfer.files[0];if(f){selectedAPK=f;showAPKInfo(f);}}
+function onAPKSelect(e){const f=e.target.files[0];if(f){selectedAPK=f;showAPKInfo(f);}}
+
+function showAPKInfo(f){
+  document.getElementById('apkName').textContent=f.name;
+  document.getElementById('apkMeta').textContent=`${fmtSize(f.size)} · APK Package · ${new Date(f.lastModified).toLocaleDateString()}`;
+  document.getElementById('apkInfo').classList.add('show');
+  document.getElementById('apkResult').style.display='none';
+}
+
+async function analyzeAPK(){
+  if(!selectedAPK){alert('Select an APK file first.');return;}
+  document.getElementById('apkScanBtn').disabled=true;
+  document.getElementById('apkResult').style.display='none';
+  document.getElementById('apkScanning').style.display='block';
+  await animateScan('apkStatus','apkProg',['READING APK PACKAGE...','EXTRACTING ZIP ENTRIES...','PARSING ANDROIDMANIFEST...','SCANNING PERMISSIONS...','CHECKING DEX BYTECODE...','SCANNING STRINGS...','COMPUTING HASH...','GENERATING REPORT...']);
+  const buf=await selectedAPK.arrayBuffer();
+  const [s256,s1]=await Promise.all([sha256(buf),sha1(buf)]);
+  const crc=crc32str(buf);
+  const bytes=new Uint8Array(buf);
+
+  // Parse ZIP
+  let apkData={entries:[],manifest:'',dex:[],allText:'',parseError:null};
+  if(typeof JSZip!=='undefined'){
+    try{
+      const zip=await JSZip.loadAsync(buf);
+      apkData.entries=Object.keys(zip.files);
+      for(const [path,file] of Object.entries(zip.files)){
+        if(path.endsWith('.dex'))apkData.dex.push(path);
+        if(path==='AndroidManifest.xml'||path.endsWith('.xml')||path.endsWith('.dex')){
+          const t=await file.async('string').catch(()=>'');
+          apkData.allText+=t+'\n';
+          if(path==='AndroidManifest.xml')apkData.manifest=t;
+        }
+      }
+    }catch(err){apkData.parseError=err.message;apkData.allText=new TextDecoder('utf-8',{fatal:false}).decode(bytes);}
+  } else {
+    apkData.allText=new TextDecoder('utf-8',{fatal:false}).decode(bytes);
+    apkData.parseError='JSZip not loaded yet — raw byte scan used';
+  }
+
+  document.getElementById('apkScanning').style.display='none';
+  const a=apkAnalysis(selectedAPK,apkData,bytes);
+  const extra=buildAPKExtra(a,apkData,crc,s1,s256);
+  renderCard('apkResult',selectedAPK.name,a.verdict,a.score,a.checks,a.flags,extra);
+  addHistory('📱',selectedAPK.name,a.score,a.verdict);
+  document.getElementById('apkScanBtn').disabled=false;
+}
+
+function apkAnalysis(file,apkData,bytes){
+  const flags=[]; let score=0;
+  const txt=apkData.allText;
+  const name=file.name.toLowerCase();
+  const ext=(name.split('.').pop()||'');
+
+  // Extension
+  if(ext!=='apk'){flags.push({t:`Extension ".${ext}" is not .apk — suspicious rename or wrong file`,s:'danger'});score+=20;}
+
+  // Magic bytes (APK must be ZIP = PK)
+  if(bytes[0]===0x50&&bytes[1]===0x4B){flags.push({t:'Valid ZIP/APK magic bytes (PK header) ✓',s:'safe'});}
+  else{flags.push({t:'INVALID magic bytes — not a valid ZIP/APK structure',s:'danger'});score+=30;}
+
+  // Required components
+  const hasManifest=apkData.entries.includes('AndroidManifest.xml')||apkData.manifest.length>10;
+  const hasDex=apkData.dex.length>0||apkData.entries.some(e=>e.endsWith('.dex'));
+  const hasCerts=apkData.entries.some(e=>e.startsWith('META-INF/')&&(e.endsWith('.RSA')||e.endsWith('.DSA')||e.endsWith('.EC')||e.endsWith('.SF')));
+
+  if(!hasManifest){flags.push({t:'AndroidManifest.xml missing — invalid or corrupted APK',s:'danger'});score+=20;}
+  else{flags.push({t:'AndroidManifest.xml present ✓',s:'safe'});}
+  if(!hasDex){flags.push({t:'No DEX bytecode — APK may be incomplete or repacked',s:'warn'});score+=12;}
+  else{flags.push({t:`DEX bytecode files found (${apkData.dex.length||'?'}) ✓`,s:'safe'});}
+  if(!hasCerts){flags.push({t:'No signing certificate — APK is unsigned or tampered',s:'danger'});score+=25;}
+  else{flags.push({t:'APK signing certificate present ✓',s:'safe'});}
+
+  // Permissions
+  const foundPerms=[];
+  for(const [perm,info] of Object.entries(DANGER_PERMS)){
+    if(txt.includes(perm)||txt.includes('android.permission.'+perm)){
+      foundPerms.push({name:perm,...info});
+      score+=info.l==='danger'?8:3;
+    }
+  }
+  const dp=foundPerms.filter(p=>p.l==='danger');
+  const wp=foundPerms.filter(p=>p.l==='warn');
+  if(dp.length>0){flags.push({t:`${dp.length} DANGEROUS permission(s): ${dp.slice(0,3).map(p=>p.name).join(', ')}`,s:'danger'});}
+  if(wp.length>0){flags.push({t:`${wp.length} sensitive permission(s) (location, contacts, storage, etc.)`,s:'warn'});}
+  if(foundPerms.length===0){flags.push({t:'No known dangerous permissions detected',s:'safe'});}
+
+  // Package name
+  const pkgM=txt.match(/package="([^"]+)"/)||txt.match(/packageName=([^\s;]+)/);
+  const pkg=pkgM?pkgM[1]:null;
+  if(pkg){
+    if(!/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/i.test(pkg)){flags.push({t:`Irregular package name: "${pkg}"`,s:'warn'});score+=10;}
+    for(const b of BRANDS){
+      if(pkg.toLowerCase().includes(b)&&!pkg.toLowerCase().startsWith('com.'+b)){
+        flags.push({t:`Package "${pkg}" contains brand "${b}" — possible impersonation`,s:'danger'});score+=25;break;
+      }
+    }
+  } else {flags.push({t:'Package name not found — may be obfuscated',s:'warn'});score+=8;}
+
+  // Root/exploit strings
+  const rootStrings=['su binary','/system/bin/su','chmod 777','Runtime.exec','ProcessBuilder'];
+  const foundRoots=rootStrings.filter(s=>txt.includes(s));
+  if(foundRoots.some(s=>s.includes('su binary')||s.includes('/system/bin/su'))){flags.push({t:'Root/su exploit strings found — possible privilege escalation',s:'danger'});score+=20;}
+  if(foundRoots.some(s=>s.includes('Runtime.exec')||s.includes('ProcessBuilder'))){flags.push({t:'Shell command execution code detected',s:'danger'});score+=15;}
+
+  // HTTP URLs in APK
+  if((txt.match(/http:\/\//g)||[]).length>2){flags.push({t:'Multiple HTTP (insecure) URLs found inside APK',s:'warn'});score+=8;}
+
+  // Obfuscation
+  if((txt.match(/class [a-z]\b/g)||[]).length>15){flags.push({t:'High density of single-char class names — likely obfuscated code',s:'warn'});score+=10;}
+
+  // Large file count
+  if(apkData.entries.length>600){flags.push({t:`Very large APK: ${apkData.entries.length} entries — unusual complexity`,s:'warn'});score+=8;}
+
+  score=Math.min(score,100);
+  if(apkData.parseError){flags.push({t:`Note: ${apkData.parseError}`,s:'warn'});}
+  const verdict=score<=25?'SAFE':score<=55?'WARNING':'DANGER';
+  return{score,verdict,flags,pkg,foundPerms,checks:{
+    ext:{label:'Extension',val:`.${ext}`,ok:ext==='apk'},
+    magic:{label:'ZIP Structure',val:bytes[0]===0x50?'Valid (PK)':'INVALID',ok:bytes[0]===0x50},
+    manifest:{label:'Manifest',val:hasManifest?'Found':'MISSING',ok:hasManifest},
+    cert:{label:'Signature',val:hasCerts?'Present':'MISSING',ok:hasCerts},
+    pkg:{label:'Package Name',val:pkg||'Not found',ok:!!pkg},
+    perms:{label:'Danger Perms',val:dp.length?`${dp.length} found`:'None',ok:dp.length===0},
+  }};
+}
+
+function buildAPKExtra(a,apkData,crc,s1,s256){
+  const permBlock=a.foundPerms.length?`<div class="details-section"><div class="details-title">// DETECTED PERMISSIONS (${a.foundPerms.length} total)</div><div class="perm-grid">${a.foundPerms.map(p=>`<span class="perm-pill perm-${p.l}" title="${p.d}">${p.name}</span>`).join('')}</div></div>`:'';
+  const entries=apkData.entries.slice(0,24);
+  const fileBlock=entries.length?`<div class="details-section"><div class="details-title">// APK CONTENTS (${apkData.entries.length} entries, showing first 24)</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:3px;margin-top:8px;">${entries.map(e=>{const c=e.endsWith('.dex')||e.endsWith('.so')?'var(--warn)':'var(--text-dim)';return `<div style="font-family:'Share Tech Mono',monospace;font-size:0.67rem;color:${c};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${e}">${e}</div>`;}).join('')}${apkData.entries.length>24?`<div style="font-size:.67rem;color:var(--muted);font-family:'Share Tech Mono',monospace;">…and ${apkData.entries.length-24} more</div>`:''}</div></div>`:'';
+  const hb=hashExtra(crc,s1,s256,'Submit SHA-256 or the APK file directly to <a href="https://virustotal.com" target="_blank">VirusTotal.com</a> for deep multi-AV scanning.');
+  return permBlock+fileBlock+hb;
+}
+</script>
+</body>
+</html>
